@@ -6,25 +6,25 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Core;
-import org.opencv.android.Utils;
-import org.opencv.imgproc.Imgproc;
-
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import org.opencv.android.Utils;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
+import java.io.IOException;
+
+public class BasicActivity extends AppCompatActivity {
 
     Button capture;
     ImageView imageView;
@@ -76,13 +76,16 @@ public class MainActivity extends AppCompatActivity {
 
             }
         } else {
+            bmpURL = com.alli.simple.utils.Utils.insertImage(getContentResolver(),
+                    null, "Simple_");
             Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.parse(bmpURL));
             startActivityForResult(intent,CAPTURE_IMAGE_REQUEST_CODE);
         }
     }
 
     private void showAlert() {
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        AlertDialog alertDialog = new AlertDialog.Builder(BasicActivity.this).create();
         alertDialog.setTitle("Alert");
         alertDialog.setMessage("App needs to access the Camera.");
 
@@ -99,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
 
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
-                        ActivityCompat.requestPermissions(MainActivity.this,
+                        ActivityCompat.requestPermissions(BasicActivity.this,
                                 new String[]{Manifest.permission.CAMERA},
                                 MY_PERMISSIONS_REQUEST_CAMERA);
                     }
@@ -111,10 +114,9 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == CAPTURE_IMAGE_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 Toast.makeText(this, "Image captured and converted", Toast.LENGTH_LONG).show();
-                Bitmap bmp = (Bitmap)data.getExtras().get("data");
+                Bitmap bmp = com.alli.simple.utils.Utils.getBitmap(bmpURL, this);
                 imageView.setImageBitmap(getModified(bmp));
-                bmpURL = com.alli.simple.utils.Utils.insertImage(getContentResolver(),
-                        bmp, "Simple_");
+
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Cancelled.", Toast.LENGTH_LONG).show();
             } else {
