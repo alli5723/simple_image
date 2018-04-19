@@ -18,6 +18,7 @@
         app:layout_constraintBottom_toTopOf="@+id/capture"
         android:src="@color/blackLike"/>
 
+
     <Button
         android:id="@+id/capture"
         android:layout_width="0dp"

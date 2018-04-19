@@ -6,29 +6,31 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.net.Uri;
-import android.os.Environment;
-import android.provider.MediaStore;
+
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Core;
+import org.opencv.android.Utils;
+import org.opencv.imgproc.Imgproc;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 public class MainActivity extends AppCompatActivity {
 
     Button capture;
     ImageView imageView;
+    Bitmap bmp = null;
+
     public static final int MY_PERMISSIONS_REQUEST_CAMERA = 100;
     public static final int CAPTURE_IMAGE_REQUEST_CODE = 1;
-    Uri file;
+    public static final String CURRENT_IMAGE = "image";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,12 +39,25 @@ public class MainActivity extends AppCompatActivity {
 
         capture = (Button)findViewById(R.id.capture);
         imageView = (ImageView)findViewById(R.id.preview);
+
+        if (savedInstanceState != null && bmp != null) {
+            Log.e("TAG", "onCreate: there is something saved" );
+            bmp = savedInstanceState.getParcelable(CURRENT_IMAGE);
+            imageView.setImageBitmap(getModified(bmp));
+        }
+
         capture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showCamera();
             }
         });
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(CURRENT_IMAGE, bmp);
+        super.onSaveInstanceState(outState);
     }
 
     private void showCamera(){
@@ -94,14 +109,27 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == CAPTURE_IMAGE_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                Toast.makeText(this, "Capture Image", Toast.LENGTH_LONG).show();
-                Bitmap img = (Bitmap)data.getExtras().get("data");
-                imageView.setImageBitmap(img);
+                Toast.makeText(this, "Image captured and converted", Toast.LENGTH_LONG).show();
+                bmp = (Bitmap)data.getExtras().get("data");
+                imageView.setImageBitmap(getModified(bmp));
             } else if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Cancelled.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this, "Image not captured.", Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private Bitmap getModified(Bitmap b){
+        Mat tmp = new Mat (b.getWidth(), b.getHeight(), CvType.CV_8UC1);
+        Utils.bitmapToMat(b, tmp);
+        Imgproc.cvtColor(tmp, tmp, Imgproc.COLOR_RGB2GRAY);
+
+        Utils.matToBitmap(tmp, b);
+        return b;
+    }
+
+    static {
+        System.loadLibrary("opencv_java3");
     }
 }
